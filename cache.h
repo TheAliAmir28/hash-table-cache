@@ -4,7 +4,6 @@
 #include <string>
 #include "math.h"
 using namespace std;
-class Grader;   // forward declaration, will be used for grdaing
 class Tester;   // forward declaration, will be used for testing
 class Person;   // forward declaration
 class Cache;    // forward declaration
