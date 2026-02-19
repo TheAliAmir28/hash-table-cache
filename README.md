@@ -71,6 +71,3 @@ Traditional hash tables rehash ALL data when resizing, causing latency spikes. T
 
 ## Author
 Ali Amir
-
-## License
-Educational project - UMBC Computer Science
