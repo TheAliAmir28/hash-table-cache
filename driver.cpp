@@ -1,4 +1,3 @@
-// CMSC 341 - Fall 2025 - Project 4
 #include "cache.h"
 #include <math.h>
 #include <algorithm>
