@@ -18,7 +18,6 @@ enum prob_t {QUADRATIC, DOUBLEHASH, LINEAR}; // types of collision handling poli
 
 class Person{
     public:
-    friend class Grader;
     friend class Tester;
     friend class Cache;
     Person(string key="", int id=0, bool used=false){
