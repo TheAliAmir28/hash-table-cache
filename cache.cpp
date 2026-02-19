@@ -1,4 +1,3 @@
-// CMSC 341 - Fall 25 - Project 4
 #include "cache.h"
 // Constructor
 Cache::Cache(int size, hash_fn hash, prob_t probing = DEFPOLCY){
