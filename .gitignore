@@ -1,0 +1,24 @@
+# Compiled files
+*.o
+*.obj
+*.exe
+benchmark
+test_naive
+test_utils
+driver
+
+# Test outputs
+test_output.csv
+results/*.csv
+
+# IDE files
+.vscode/
+.vs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python cache
+__pycache__/
+*.pyc
