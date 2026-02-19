@@ -181,7 +181,7 @@ int main(){
 
 unsigned int hashCode(const string str) {
     unsigned int val = 0 ;
-    const unsigned int thirtyThree = 33 ;  // magic number from textbook
+    const unsigned int thirtyThree = 33 ;  // magic number
     for ( int i = 0 ; i < (int)(str.length()); i++)
        val = val * thirtyThree + str[i] ;
     return val ;
