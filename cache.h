@@ -1,4 +1,3 @@
-// CMSC 341 - Fall 25 - Project 4
 #ifndef CACHE_H
 #define CACHE_H
 #include <iostream>
