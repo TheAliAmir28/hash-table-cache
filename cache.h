@@ -15,7 +15,7 @@ typedef unsigned int (*hash_fn)(string); // declaration of hash function
 enum prob_t {QUADRATIC, DOUBLEHASH, LINEAR}; // types of collision handling policy
 #define DEFPOLCY QUADRATIC
 
-class Person{
+class Person {
     public:
     friend class Tester;
     friend class Cache;
@@ -64,7 +64,7 @@ class Person{
     // if it is set to true, it means the bucket contains live data, and we cannot overwrite it
     bool m_used;
 };
-class Cache{
+class Cache {
     public:
     friend class Grader;
     friend class Tester;
