@@ -69,11 +69,6 @@ Traditional hash tables rehash ALL data when resizing, causing latency spikes. T
 - **Max Latency**: 42% improvement - the real advantage
 - **Trade-off**: ~30% memory overhead during rehashing (temporary)
 
-## Course Information
-- **Course**: CMSC 341 (Data Structures)
-- **Institution**: UMBC
-- **Semester**: Fall 2025
-
 ## Author
 Ali Amir
 
