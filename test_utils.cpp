@@ -53,10 +53,10 @@ int main() {
     cout << "--------------------------------" << endl;
     TestDataGenerator dataGen(42); // seed = 42
     
-    cout << "Generating 5 random persons:" << endl;
+    cout << "Generating 5 random entries:" << endl;
     for (int i = 0; i < 5; i++) {
-        Person p = dataGen.generatePerson(i);
-        cout << "  Person " << i << ": " << p.getKey() 
+        CacheEntry p = dataGen.generateEntry(i);
+        cout << "  Entry " << i << ": " << p.getKey() 
              << " (ID: " << p.getID() << ")" << endl;
     }
     cout << "✓ TestDataGenerator is working!\n" << endl;
@@ -64,8 +64,8 @@ int main() {
     // Test 4: Generate batch
     cout << "TEST 4: Batch Generation" << endl;
     cout << "------------------------" << endl;
-    vector<Person> batch = dataGen.generateBatch(100);
-    cout << "Generated batch of " << batch.size() << " persons" << endl;
+    vector<CacheEntry> batch = dataGen.generateBatch(100);
+    cout << "Generated batch of " << batch.size() << " entries" << endl;
     cout << "✓ Batch generation is working!\n" << endl;
     
     // Test 5: CSV output
