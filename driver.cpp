@@ -138,7 +138,7 @@ unsigned int hashCode(const string str);
 
 
 int main(){
-    vector<Person> dataList;
+    vector<CacheEntry> dataList;
     Random RndID(MINID,MAXID);
     Random RndStr(MINSEARCH,MAXSEARCH);
     Cache cache(MINPRIME, hashCode, DOUBLEHASH);
@@ -147,7 +147,7 @@ int main(){
     cout << "Inserting 49 data nodes!" << endl; 
     for (int i=0;i<49;i++){
         // generating random data
-        Person dataObj = Person(searchStr[RndStr.getRandNum()], RndID.getRandNum(), true);
+        CacheEntry dataObj = CacheEntry(searchStr[RndStr.getRandNum()], RndID.getRandNum(), true);
         // saving data for later use
         dataList.push_back(dataObj);
         // inserting data in to the DB object
@@ -162,8 +162,8 @@ int main(){
     
     // checking whether all data points are there
     cout << endl << "Checking whether all data exist in the DB:" << endl;
-    for (vector<Person>::iterator it = dataList.begin(); it != dataList.end(); it++){
-        Person anObj = cache.getPerson((*it).getKey(), (*it).getID());
+    for (vector<CacheEntry>::iterator it = dataList.begin(); it != dataList.end(); it++){
+        CacheEntry anObj = cache.getCacheEntry((*it).getKey(), (*it).getID());
         bool foundIt = (*it == anObj);
         result = result && foundIt;
         if (!foundIt){
@@ -181,7 +181,7 @@ int main(){
 
 unsigned int hashCode(const string str) {
     unsigned int val = 0 ;
-    const unsigned int thirtyThree = 33 ;  // magic number
+    const unsigned int thirtyThree = 33 ;  // magic number from textbook
     for ( int i = 0 ; i < (int)(str.length()); i++)
        val = val * thirtyThree + str[i] ;
     return val ;
