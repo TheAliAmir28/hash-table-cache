@@ -154,12 +154,12 @@ public:
         Cache c(MINPRIME, hashCode, LINEAR);
 
         Random rID(MINID, MAXID);
-        // Insert 50 data points (persons)
+        // Insert 50 data points (entries)
         for (int i = 0; i < 50; i++) {
             string key = "key" + to_string(i);
             int ID = rID.getRandNum();
-            // Create person
-            Person p(key, ID, true);
+            // Create entry
+            CacheEntry p(key, ID, true);
 
             // Hash the key and get the index
             int hashedKey = hashCode(key);
@@ -175,13 +175,13 @@ public:
                 return false;
             }
 
-            // Check that the person is in the correct table spot
+            // Check that the entry is in the correct table spot
             if (c.m_currentTable[index] == nullptr) {
                 return false;
             }
-            // Make sure that the person is there and the keys match
-            Person foundPerson = c.getPerson(key, ID);
-            if (foundPerson.getKey() != key || foundPerson.getID() != ID) {
+            // Make sure that the entry is there and the keys match
+            CacheEntry foundEntry = c.getCacheEntry(key, ID);
+            if (foundEntry.getKey() != key || foundEntry.getID() != ID) {
                 return false;
             }
         }
@@ -191,12 +191,12 @@ public:
     bool testInsertHalfCollide() {
         Random rID(MINID, MAXID);
         Cache c(MINPRIME, hashCode, LINEAR);
-        // Inserting 25 persons that do not collide
+        // Inserting 25 entries that do not collide
         for (int i = 0; i < 25; i++) {
             string key = "key" + to_string(i);
             int ID = rID.getRandNum();
-            Person p(key, ID, true);
-            // Insert the person
+            CacheEntry p(key, ID, true);
+            // Insert the entry
             if (c.insert(p) == false) {
                 return false;
             }
@@ -206,19 +206,19 @@ public:
                 return false;
             }
             
-            // Retrieve person from table
-            Person foundPerson = c.getPerson(key, ID);
-            // Check if it's the matching person
-            if (foundPerson.getKey() != key || foundPerson.getID() != ID) {
+            // Retrieve entry from table
+            CacheEntry foundEntry = c.getCacheEntry(key, ID);
+            // Check if it's the matching entry
+            if (foundEntry.getKey() != key || foundEntry.getID() != ID) {
                 return false;
             }
         }
-        // Insert 25 persons that do collide
+        // Insert 25 entries that do collide
         for (int i = 25; i < 50; i++) {
             string key = "A" + to_string(i);
             int ID = rID.getRandNum();
-            Person p(key, ID, true);
-            // Insert the person
+            CacheEntry p(key, ID, true);
+            // Insert the entry
             if (c.insert(p) == false) {
                 return false;
             }
@@ -228,26 +228,26 @@ public:
             if (c.m_currentSize != newSize) {
                 return false;
             }
-        // Retrieve person from table
-            Person foundPerson = c.getPerson(key, ID);
-            // Check if it's the matching person           
-            if (foundPerson.getKey() != key || foundPerson.getID() != ID) {
+        // Retrieve entry from table
+            CacheEntry foundEntry = c.getCacheEntry(key, ID);
+            // Check if it's the matching entry
+            if (foundEntry.getKey() != key || foundEntry.getID() != ID) {
                 return false;
             }
         }
         return true;
     }
-    // testFindMissingPerson: Test the find operation (getPerson(...) function) for an error case, the Person object does not exist in the database.
-    bool testFindMissingPerson() {
+    // testFindMissingEntry: Test the find operation (getCacheEntry(...) function) for an error case, the CacheEntry object does not exist in the database.
+    bool testFindMissingEntry() {
         Random rID(MINID, MAXID);
         Cache c(MINPRIME, hashCode, LINEAR);
 
-        // Insert persons
+        // Insert entries
         for (int i = 0; i < 50; i++) {
             string key = "key" + to_string(i);
             int ID = rID.getRandNum();
-            // Create person and insert
-            Person p(key, ID, true);
+            // Create entry and insert
+            CacheEntry p(key, ID, true);
 
             if (c.insert(p) == false) {
                 return false;
@@ -255,16 +255,16 @@ public:
         }
 
         // Test a missing key
-        Person missingPerson = c.getPerson("Missing Person", 123456);
+        CacheEntry missingEntry = c.getCacheEntry("Missing CacheEntry", 123456);
 
         // Make sure it's empty
-        if (missingPerson.getKey() != "") {
+        if (missingEntry.getKey() != "") {
             return false;
         }
-        if (missingPerson.getID() != 0) {
+        if (missingEntry.getID() != 0) {
             return false;
         }
-        if (missingPerson.getUsed() != false) {
+        if (missingEntry.getUsed() != false) {
             return false;
         }
         return true;        
@@ -274,18 +274,18 @@ public:
         Random rID(MINID, MAXID);
         Cache c(MINPRIME, hashCode, LINEAR);
 
-        vector<Person> inserted;
+        vector<CacheEntry> inserted;
 
         // Insert 50 non-colliding keys
         for (int i = 0; i < 50; i++) {
             string key = "key" + to_string(i);
             int ID = rID.getRandNum();
-            Person p(key, ID, true);
+            CacheEntry p(key, ID, true);
 
             if (c.insert(p) == false) {
                 return false;
             }
-            // Push the insertion person to the vector
+            // Push the inserted entry to the vector
             inserted.push_back(p);
 
             // Make sure size matches
@@ -296,7 +296,7 @@ public:
 
         // Test retrieval for each key
         for (unsigned int i = 0; i < inserted.size(); i++) {
-            Person found = c.getPerson(inserted[i].getKey(), inserted[i].getID());
+            CacheEntry found = c.getCacheEntry(inserted[i].getKey(), inserted[i].getID());
             // Check match
             if (found.getKey() != inserted[i].getKey()) {
                 return false;
@@ -312,14 +312,14 @@ public:
         Random rID(MINID, MAXID);
         Cache c(MINPRIME, hashCode, LINEAR);
 
-        vector<Person> inserted;
+        vector<CacheEntry> inserted;
 
         // Insert keys that collide
         for (int i = 0; i < 20; i++) {
             
             string key = "A" + to_string(i);
             int ID = rID.getRandNum();
-            Person p(key, ID, true);
+            CacheEntry p(key, ID, true);
             // Insert
             if (c.insert(p) == false) {
                 return false;
@@ -335,7 +335,7 @@ public:
 
         // Test retrieval for all keys
         for (unsigned int i = 0; i < inserted.size(); i++) {
-            Person found = c.getPerson(inserted[i].getKey(), inserted[i].getID());
+            CacheEntry found = c.getCacheEntry(inserted[i].getKey(), inserted[i].getID());
             // Check match
             if (found.getKey() != inserted[i].getKey()) {
                 return false;
@@ -350,14 +350,14 @@ public:
     bool testRemoveNoColliding() {
         Random rID(MINID, MAXID);
         Cache c(MINPRIME, hashCode, LINEAR);
-        // Data structure to hold check for deleted and remaining Persons later
-        vector<Person> inserted;
+        // Data structure to hold check for deleted and remaining entries later
+        vector<CacheEntry> inserted;
 
         // Insert 50 keys that do not collide
         for (int i = 0; i < 50; i++) {
             string key = "key" + to_string(i);
             int ID = rID.getRandNum();
-            Person p(key, ID, true);
+            CacheEntry p(key, ID, true);
 
             if (c.insert(p) == false) {
                 return false;
@@ -377,21 +377,21 @@ public:
             }
 
             // Make sure that they are deleted
-            Person foundPerson = c.getPerson(inserted[i].getKey(), inserted[i].getID());
+            CacheEntry foundEntry = c.getCacheEntry(inserted[i].getKey(), inserted[i].getID());
 
-            if (foundPerson.getKey() != "" || foundPerson.getID() != 0) {
+            if (foundEntry.getKey() != "" || foundEntry.getID() != 0) {
                 return false;
             }
         }
 
         // Make sure that the remaining are still present
         for (int i = 10; i < 50; i++) {
-            Person foundPerson = c.getPerson(inserted[i].getKey(), inserted[i].getID());
+            CacheEntry foundEntry = c.getCacheEntry(inserted[i].getKey(), inserted[i].getID());
 
-            if (foundPerson.getKey() != inserted[i].getKey()) {
+            if (foundEntry.getKey() != inserted[i].getKey()) {
                 return false;
             }
-            if (foundPerson.getID() != inserted[i].getID()) {
+            if (foundEntry.getID() != inserted[i].getID()) {
                 return false;
             }
         }
@@ -402,15 +402,15 @@ public:
     bool testRemoveCollidingNoRehash() {
         Random rID(MINID, MAXID);
         Cache c(MINPRIME, hashCode, LINEAR);
-        // Data structure to hold check for deleted and remaining Persons later
-        vector<Person> inserted;
+        // Data structure to hold check for deleted and remaining entries later
+        vector<CacheEntry> inserted;
 
         // Insert 20 keys that collide
         for (int i = 0; i < 20; i++) {
             string key = "A" + to_string(i);
             int ID = rID.getRandNum();
-            Person p(key, ID, true);
-            // Insert person
+            CacheEntry p(key, ID, true);
+            // Insert entry
             if (c.insert(p) == false) {
                 return false;
             }
@@ -430,9 +430,9 @@ public:
             }
 
             // The keys should be gone so check that
-            Person foundPerson = c.getPerson(inserted[i].getKey(), inserted[i].getID());
+            CacheEntry foundEntry = c.getCacheEntry(inserted[i].getKey(), inserted[i].getID());
 
-            if (foundPerson.getKey() != "" || foundPerson.getID() != 0) {
+            if (foundEntry.getKey() != "" || foundEntry.getID() != 0) {
                 return false;
             }
             
@@ -440,7 +440,7 @@ public:
 
         // Make sure that the remaining are still present
         for (int i = 10; i < 20; i++) {
-            Person found = c.getPerson(inserted[i].getKey(), inserted[i].getID());
+            CacheEntry found = c.getCacheEntry(inserted[i].getKey(), inserted[i].getID());
 
             if (found.getKey() != inserted[i].getKey()) {
                 return false;
@@ -457,13 +457,13 @@ public:
         Random rID(MINID, MAXID);
         Cache c(MINPRIME, hashCode, QUADRATIC);
 
-        vector<Person> inserted;
+        vector<CacheEntry> inserted;
 
         // Insert enough nodes to trigger a rehash
         for (int i = 0; i < 80; i++) {
             string key = "key" + to_string(i);
             int ID = rID.getRandNum();
-            Person p(key, ID, true);
+            CacheEntry p(key, ID, true);
             // Insert
             if (c.insert(p) == false) {
                 return false;
@@ -493,7 +493,7 @@ public:
         for (int i = 0; i < 80; i++) {
             string key = "key" + to_string(i);
             int ID = rID.getRandNum();
-            Person p(key, ID, true);
+            CacheEntry p(key, ID, true);
             // Insert
             if (c.insert(p) == false) {
                 return false;
@@ -512,7 +512,7 @@ public:
         for (int i = 80; i < 180; i++) {
             string key = "more" + to_string(i);
             int ID = rID.getRandNum();
-            Person p(key, ID, true);
+            CacheEntry p(key, ID, true);
             
             if (c.insert(p) == false) {
                 return false;
@@ -531,13 +531,13 @@ public:
         Random rID(MINID, MAXID);
         Cache c(MINPRIME, hashCode, QUADRATIC);
 
-        vector<Person> inserted;
+        vector<CacheEntry> inserted;
 
         // Insert 50 keys that do not collide
         for (int i = 0; i < 50; i++) {
             string key = "key" + to_string(i);
             int ID = rID.getRandNum();
-            Person p(key, ID, true);
+            CacheEntry p(key, ID, true);
 
             // Insert
             if (c.insert(p) == false) {
@@ -565,13 +565,13 @@ public:
         Random rID(MINID, MAXID);
         Cache c(MINPRIME, hashCode, QUADRATIC);
 
-        vector<Person> inserted;
+        vector<CacheEntry> inserted;
 
         // Insert 50 keys that do not collide
         for (int i = 0; i < 50; i++) {
             string key = "key" + to_string(i);
             int ID = rID.getRandNum();
-            Person p(key, ID, true);
+            CacheEntry p(key, ID, true);
 
             if (c.insert(p) == false) {
                 return false;
@@ -602,7 +602,7 @@ public:
         for (int i = 0; i < 120; i++) {
             string key = "more" + to_string(i);
             int ID = rID.getRandNum();
-            Person p(key, ID, true);
+            CacheEntry p(key, ID, true);
             
             if (c.insert(p) == false) {
                 return false;
@@ -622,7 +622,7 @@ int main() {
     // Run all tests
     cout << (t.testInsertNoCollide() == true ? "testInsertNoCollide PASSED" : "testInsertNoCollide FAILED") << endl;
     cout << (t.testInsertHalfCollide() == true ? "testInsertHalfCollide PASSED" : "testInsertHalfCollide FAILED") << endl;
-    cout << (t.testFindMissingPerson() == true ? "testFindMissingPerson PASSED" : "testFindMissingPerson FAILED") << endl;
+    cout << (t.testFindMissingEntry() == true ? "testFindMissingEntry PASSED" : "testFindMissingEntry FAILED") << endl;
     cout << (t.testFindNoCollidingKeys() == true ? "testFindNoCollidingKeys PASSED" : "testFindNoCollidingKeys FAILED") << endl;
     cout << (t.testFindColliding() == true ? "testFindColliding PASSED" : "testFindColliding FAILED") << endl;
     cout << (t.testRemoveNoColliding() == true ? "testRemoveNoColliding PASSED" : "testRemoveNoColliding FAILED") << endl;
