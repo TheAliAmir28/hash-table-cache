@@ -136,19 +136,19 @@ public:
           m_keyDist(0, 7) {
     }
     
-    // Generate a single random Person
-    Person generatePerson(int index) {
+    // Generate a single random CacheEntry
+    CacheEntry generateEntry(int index) {
         string key = searchStr[m_keyDist(m_generator)];
         int id = m_idDist(m_generator);
-        return Person(key, id, true);
+        return CacheEntry(key, id, true);
     }
     
-    // Generate a batch of random Persons
-    vector<Person> generateBatch(int count) {
-        vector<Person> batch;
+    // Generate a batch of random CacheEntries
+    vector<CacheEntry> generateBatch(int count) {
+        vector<CacheEntry> batch;
         batch.reserve(count); // pre-allocate for efficiency
         for (int i = 0; i < count; i++) {
-            batch.push_back(generatePerson(i));
+            batch.push_back(generateEntry(i));
         }
         return batch;
     }
