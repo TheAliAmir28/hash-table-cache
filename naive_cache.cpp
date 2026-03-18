@@ -18,7 +18,7 @@ NaiveCache::NaiveCache(int size, hash_fn hash, prob_t probing) {
     }
     
     // Allocate table
-    m_currentTable = new Person*[m_currentCap];
+    m_currentTable = new CacheEntry*[m_currentCap];
     for (int i = 0; i < m_currentCap; i++) {
         m_currentTable[i] = nullptr;
     }
@@ -46,7 +46,7 @@ void NaiveCache::fullRehash() {
     int newCapacity = findNextPrime(liveCount * 4);
     
     // Allocate new table
-    Person** newTable = new Person*[newCapacity];
+    CacheEntry** newTable = new CacheEntry*[newCapacity];
     for (int i = 0; i < newCapacity; i++) {
         newTable[i] = nullptr;
     }
@@ -54,7 +54,7 @@ void NaiveCache::fullRehash() {
     // TRANSFER EVERYTHING AT ONCE (this causes the spike!)
     for (int i = 0; i < m_currentCap; i++) {
         if (m_currentTable[i] != nullptr && m_currentTable[i]->getUsed()) {
-            Person* p = m_currentTable[i];
+            CacheEntry* p = m_currentTable[i];
             
             // Find slot in new table using current probing policy
             int hashedKey = m_hash(p->getKey());
@@ -82,19 +82,19 @@ void NaiveCache::fullRehash() {
 }
 
 // Insert operation
-bool NaiveCache::insert(Person person) {
+bool NaiveCache::insert(CacheEntry entry) {
     // Validate ID
-    if (person.getID() < MINID || person.getID() > MAXID) {
+    if (entry.getID() < MINID || entry.getID() > MAXID) {
         return false;
     }
     
     // Check if already exists
-    if (personExists(person, m_currentTable, m_currentCap, m_currProbing)) {
+    if (entryExists(entry, m_currentTable, m_currentCap, m_currProbing)) {
         return false;
     }
     
     // Find insertion slot
-    int insertionSpot = locateInsertionSlot(person, m_currentTable, m_currentCap, m_currProbing);
+    int insertionSpot = locateInsertionSlot(entry, m_currentTable, m_currentCap, m_currProbing);
     if (insertionSpot == -1) {
         return false;
     }
@@ -104,10 +104,10 @@ bool NaiveCache::insert(Person person) {
         m_currNumDeleted--;
     }
     
-    // Insert new person
-    Person* newPerson = new Person(person);
-    m_currentTable[insertionSpot] = newPerson;
-    newPerson->setUsed(true);
+    // Insert new entry
+    CacheEntry* newEntry = new CacheEntry(entry);
+    m_currentTable[insertionSpot] = newEntry;
+    newEntry->setUsed(true);
     m_currentSize++;
     
     // Check if rehash needed
@@ -122,11 +122,11 @@ bool NaiveCache::insert(Person person) {
 }
 
 // Remove operation
-bool NaiveCache::remove(Person person) {
-    int personIndex = findPersonIndex(person, m_currentTable, m_currentCap, m_currProbing);
+bool NaiveCache::remove(CacheEntry entry) {
+    int entryIndex = findEntryIndex(entry, m_currentTable, m_currentCap, m_currProbing);
     
-    if (personIndex >= 0) {
-        m_currentTable[personIndex]->setUsed(false);
+    if (entryIndex >= 0) {
+        m_currentTable[entryIndex]->setUsed(false);
         m_currNumDeleted++;
         
         // Check if rehash needed due to deleted ratio
@@ -143,21 +143,21 @@ bool NaiveCache::remove(Person person) {
     return false;
 }
 
-// Get person operation
-const Person NaiveCache::getPerson(string key, int ID) const {
-    Person tempPerson;
-    tempPerson.setKey(key);
-    tempPerson.setID(ID);
-    tempPerson.setUsed(true);
+// Get entry operation
+const CacheEntry NaiveCache::getCacheEntry(string key, int ID) const {
+    CacheEntry tempEntry;
+    tempEntry.setKey(key);
+    tempEntry.setID(ID);
+    tempEntry.setUsed(true);
     
-    int personIndex = findPersonIndex(tempPerson, m_currentTable, m_currentCap, m_currProbing);
+    int entryIndex = findEntryIndex(tempEntry, m_currentTable, m_currentCap, m_currProbing);
     
-    if (personIndex >= 0) {
-        return *m_currentTable[personIndex];
+    if (entryIndex >= 0) {
+        return *m_currentTable[entryIndex];
     }
     
-    // Return empty person if not found
-    return Person("", 0, false);
+    // Return empty entry if not found
+    return CacheEntry("", 0, false);
 }
 
 // Calculate load factor
@@ -193,7 +193,7 @@ int NaiveCache::probeIndex(int hashedKey, int i, int capacity, prob_t policy) co
 }
 
 // Locate insertion slot
-int NaiveCache::locateInsertionSlot(Person& p, Person** table, int capacity, prob_t policy) {
+int NaiveCache::locateInsertionSlot(CacheEntry& p, CacheEntry** table, int capacity, prob_t policy) {
     int hashedKey = m_hash(p.getKey());
     int index = 0;
     
@@ -210,8 +210,8 @@ int NaiveCache::locateInsertionSlot(Person& p, Person** table, int capacity, pro
     return -1;
 }
 
-// Check if person exists
-bool NaiveCache::personExists(Person& p, Person** table, int capacity, prob_t policy) {
+// Check if entry exists
+bool NaiveCache::entryExists(CacheEntry& p, CacheEntry** table, int capacity, prob_t policy) {
     int hashedKey = m_hash(p.getKey());
     
     for (int i = 0; i < capacity; i++) {
@@ -229,8 +229,8 @@ bool NaiveCache::personExists(Person& p, Person** table, int capacity, prob_t po
     return false;
 }
 
-// Find person index
-int NaiveCache::findPersonIndex(Person& p, Person** table, int capacity, prob_t policy) const {
+// Find entry index
+int NaiveCache::findEntryIndex(CacheEntry& p, CacheEntry** table, int capacity, prob_t policy) const {
     int hashedKey = m_hash(p.getKey());
     
     for (int i = 0; i < capacity; i++) {
