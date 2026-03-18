@@ -12,9 +12,9 @@ public:
     ~NaiveCache();
     
     // Core operations (same as Cache)
-    bool insert(Person person);
-    bool remove(Person person);
-    const Person getPerson(string key, int ID) const;
+    bool insert(CacheEntry entry);
+    bool remove(CacheEntry entry);
+    const CacheEntry getCacheEntry(string key, int ID) const;
     
     // Expose for benchmarking
     int getCurrentSize() const { return m_currentSize; }
@@ -28,16 +28,16 @@ private:
     
     // Helper functions (same as Cache)
     int probeIndex(int hashedKey, int i, int capacity, prob_t policy) const;
-    int locateInsertionSlot(Person& p, Person** table, int capacity, prob_t policy);
-    bool personExists(Person& p, Person** table, int capacity, prob_t policy);
-    int findPersonIndex(Person& p, Person** table, int capacity, prob_t policy) const;
+    int locateInsertionSlot(CacheEntry& p, CacheEntry** table, int capacity, prob_t policy);
+    bool entryExists(CacheEntry& p, CacheEntry** table, int capacity, prob_t policy);
+    int findEntryIndex(CacheEntry& p, CacheEntry** table, int capacity, prob_t policy) const;
     
     // Utility functions
     bool isPrime(int number);
     int findNextPrime(int current);
     
     // Member variables (simpler than Cache - no old table!)
-    Person**   m_currentTable;
+    CacheEntry**   m_currentTable;
     int        m_currentCap;
     int        m_currentSize;
     int        m_currNumDeleted;
