@@ -26,9 +26,9 @@ int main() {
     cout << "TEST 1: Basic Insertion" << endl;
     cout << "------------------------" << endl;
     
-    vector<Person> testData;
+    vector<CacheEntry> testData;
     for (int i = 0; i < 10; i++) {
-        Person p = dataGen.generatePerson(i);
+        CacheEntry p = dataGen.generateEntry(i);
         testData.push_back(p);
         
         if (cache.insert(p)) {
@@ -48,7 +48,7 @@ int main() {
     
     bool allFound = true;
     for (int i = 0; i < 10; i++) {
-        Person found = cache.getPerson(testData[i].getKey(), testData[i].getID());
+        CacheEntry found = cache.getCacheEntry(testData[i].getKey(), testData[i].getID());
         if (found.getKey() == testData[i].getKey() && found.getID() == testData[i].getID()) {
             cout << "✓ Found: " << found.getKey() << " (ID: " << found.getID() << ")" << endl;
         } else {
@@ -72,7 +72,7 @@ int main() {
     
     // Insert enough to trigger rehash
     for (int i = 10; i < 100; i++) {
-        Person p = dataGen.generatePerson(i);
+        CacheEntry p = dataGen.generateEntry(i);
         cache.insert(p);
         
         if (cache.getCurrentCap() != oldCapacity) {
@@ -89,7 +89,7 @@ int main() {
     
     bool allStillThere = true;
     for (int i = 0; i < 10; i++) {
-        Person found = cache.getPerson(testData[i].getKey(), testData[i].getID());
+        CacheEntry found = cache.getCacheEntry(testData[i].getKey(), testData[i].getID());
         if (found.getKey() != testData[i].getKey() || found.getID() != testData[i].getID()) {
             cout << "✗ Lost data during rehash!" << endl;
             allStillThere = false;
@@ -110,7 +110,7 @@ int main() {
     if (cache.remove(testData[0])) {
         cout << "✓ Removed: " << testData[0].getKey() << endl;
         
-        Person found = cache.getPerson(testData[0].getKey(), testData[0].getID());
+        CacheEntry found = cache.getCacheEntry(testData[0].getKey(), testData[0].getID());
         if (found.getKey() == "") {
             cout << "✓ Confirmed removal" << endl;
         } else {
