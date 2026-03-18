@@ -37,7 +37,7 @@ void benchmarkInsertionLatency() {
         Timer timer;
         
         for (int i = 0; i < NUM_OPERATIONS; i++) {
-            Person p = dataGen.generatePerson(i);
+            CacheEntry p = dataGen.generateEntry(i);
             
             timer.start();
             cache.insert(p);
@@ -64,7 +64,7 @@ void benchmarkInsertionLatency() {
         Timer timer;
         
         for (int i = 0; i < NUM_OPERATIONS; i++) {
-            Person p = dataGen.generatePerson(i);
+            CacheEntry p = dataGen.generateEntry(i);
             
             timer.start();
             cache.insert(p);
@@ -86,12 +86,12 @@ void benchmarkInsertionLatency() {
     // Test std::unordered_map (baseline)
     {
         cout << "\n[3/3] Testing: std::unordered_map (baseline)..." << endl;
-        unordered_map<string, Person> stdMap;
+        unordered_map<string, CacheEntry> stdMap;
         LatencyStats stats;
         Timer timer;
         
         for (int i = 0; i < NUM_OPERATIONS; i++) {
-            Person p = dataGen.generatePerson(i);
+            CacheEntry p = dataGen.generateEntry(i);
             string key = p.getKey() + to_string(p.getID());
             
             timer.start();
@@ -134,13 +134,13 @@ void benchmarkThroughput() {
         
         // Warmup
         for (int i = 0; i < WARMUP; i++) {
-            cache.insert(dataGen.generatePerson(i));
+            cache.insert(dataGen.generateEntry(i));
         }
         
         // Actual test
         auto start = high_resolution_clock::now();
         for (int i = 0; i < NUM_OPERATIONS; i++) {
-            cache.insert(dataGen.generatePerson(i + WARMUP));
+            cache.insert(dataGen.generateEntry(i + WARMUP));
         }
         auto end = high_resolution_clock::now();
         
@@ -163,13 +163,13 @@ void benchmarkThroughput() {
         
         // Warmup
         for (int i = 0; i < WARMUP; i++) {
-            cache.insert(dataGen.generatePerson(i));
+            cache.insert(dataGen.generateEntry(i));
         }
         
         // Actual test
         auto start = high_resolution_clock::now();
         for (int i = 0; i < NUM_OPERATIONS; i++) {
-            cache.insert(dataGen.generatePerson(i + WARMUP));
+            cache.insert(dataGen.generateEntry(i + WARMUP));
         }
         auto end = high_resolution_clock::now();
         
@@ -188,18 +188,18 @@ void benchmarkThroughput() {
     // std::unordered_map
     {
         cout << "\n[3/3] Testing std::unordered_map..." << endl;
-        unordered_map<string, Person> stdMap;
+        unordered_map<string, CacheEntry> stdMap;
         
         // Warmup
         for (int i = 0; i < WARMUP; i++) {
-            Person p = dataGen.generatePerson(i);
+            CacheEntry p = dataGen.generateEntry(i);
             stdMap[p.getKey() + to_string(p.getID())] = p;
         }
         
         // Actual test
         auto start = high_resolution_clock::now();
         for (int i = 0; i < NUM_OPERATIONS; i++) {
-            Person p = dataGen.generatePerson(i + WARMUP);
+            CacheEntry p = dataGen.generateEntry(i + WARMUP);
             stdMap[p.getKey() + to_string(p.getID())] = p;
         }
         auto end = high_resolution_clock::now();
@@ -242,14 +242,14 @@ void benchmarkRehashingSpikes() {
         // Insert until close to rehash
         for (int i = 0; i < OPS_BEFORE_REHASH; i++) {
             timer.start();
-            cache.insert(dataGen.generatePerson(i));
+            cache.insert(dataGen.generateEntry(i));
             beforeStats.record(timer.elapsed());
         }
         
         // Insert during rehashing period
         for (int i = 0; i < OPS_DURING_REHASH; i++) {
             timer.start();
-            cache.insert(dataGen.generatePerson(i + OPS_BEFORE_REHASH));
+            cache.insert(dataGen.generateEntry(i + OPS_BEFORE_REHASH));
             duringStats.record(timer.elapsed());
         }
         
@@ -282,14 +282,14 @@ void benchmarkRehashingSpikes() {
         // Insert until close to rehash
         for (int i = 0; i < OPS_BEFORE_REHASH; i++) {
             timer.start();
-            cache.insert(dataGen.generatePerson(i));
+            cache.insert(dataGen.generateEntry(i));
             beforeStats.record(timer.elapsed());
         }
         
         // Insert during rehashing period
         for (int i = 0; i < OPS_DURING_REHASH; i++) {
             timer.start();
-            cache.insert(dataGen.generatePerson(i + OPS_BEFORE_REHASH));
+            cache.insert(dataGen.generateEntry(i + OPS_BEFORE_REHASH));
             duringStats.record(timer.elapsed());
         }
         
