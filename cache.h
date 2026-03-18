@@ -5,7 +5,7 @@
 #include "math.h"
 using namespace std;
 class Tester;   // forward declaration, will be used for testing
-class Person;   // forward declaration
+class CacheEntry;   // forward declaration
 class Cache;    // forward declaration
 const int MINPRIME = 101;   // Min size for hash table
 const int MAXPRIME = 99991; // Max size for hash table
@@ -15,11 +15,11 @@ typedef unsigned int (*hash_fn)(string); // declaration of hash function
 enum prob_t {QUADRATIC, DOUBLEHASH, LINEAR}; // types of collision handling policy
 #define DEFPOLCY QUADRATIC
 
-class Person {
+class CacheEntry{
     public:
     friend class Tester;
     friend class Cache;
-    Person(string key="", int id=0, bool used=false){
+    CacheEntry(string key="", int id=0, bool used=false){
         m_key = key; m_id = id; m_used=used;
     }
     string getKey() const {return m_key;}
@@ -29,26 +29,26 @@ class Person {
     bool getUsed() const {return m_used;}
     void setUsed(bool used) {m_used=used;}
     // the following function is a friend function
-    friend ostream& operator<<(ostream& sout, const Person *person ){
-        if ((person != nullptr) && !(person->getKey().empty()))
-            sout << person->getKey() << " (" << person->getID() << ", "<< person->getUsed() <<  ")";
+    friend ostream& operator<<(ostream& sout, const CacheEntry *entry ){
+        if ((entry != nullptr) && !(entry->getKey().empty()))
+            sout << entry->getKey() << " (" << entry->getID() << ", "<< entry->getUsed() <<  ")";
         else
             sout << "";
         return sout;
     }
     // the following function is a friend function
-    friend bool operator==(const Person& lhs, const Person& rhs){
+    friend bool operator==(const CacheEntry& lhs, const CacheEntry& rhs){
         // since the uniqueness of an object is defined by sequence and ID
         // the equality operator considers only those two criteria
         return ((lhs.getKey() == rhs.getKey()) && (lhs.getID() == rhs.getID()));
     }
     // the following function is a class function
-    bool operator==(const Person* & rhs){
+    bool operator==(const CacheEntry* & rhs){
         // since the uniqueness of an object is defined by sequence and ID
         // the equality operator considers only those two criteria
         return ((getKey() == rhs->getKey()) && (getID() == rhs->getID()));
     }
-    const Person& operator=(const Person& rhs){
+    const CacheEntry& operator=(const CacheEntry& rhs){
         if (this != &rhs){
             m_key = rhs.m_key;
             m_id = rhs.m_id;
@@ -64,7 +64,7 @@ class Person {
     // if it is set to true, it means the bucket contains live data, and we cannot overwrite it
     bool m_used;
 };
-class Cache {
+class Cache{
     public:
     friend class Grader;
     friend class Tester;
@@ -75,27 +75,27 @@ class Cache {
     // Returns the ratio of deleted slots in the new table
     float deletedRatio() const;
     // insert only happens in the new table
-    bool insert(Person person);
+    bool insert(CacheEntry entry);
     // remove can happen from either table
-    bool remove(Person person);
+    bool remove(CacheEntry entry);
     // find can happen in either table
-    const Person getPerson(string key, int id) const;
+    const CacheEntry getCacheEntry(string key, int id) const;
     // update the information
-    bool updateID(Person person, int ID);
+    bool updateID(CacheEntry entry, int ID);
     void changeProbPolicy(prob_t policy);
     void dump() const;
     private:
     hash_fn    m_hash;          // hash function
     prob_t     m_newPolicy;     // stores the change of policy request
 
-    Person**   m_currentTable;  // hash table
+    CacheEntry**   m_currentTable;  // hash table
     int        m_currentCap;    // hash table size (capacity)
     int        m_currentSize;   // current number of entries
                                 // m_currentSize includes deleted entries 
     int        m_currNumDeleted;// number of deleted entries
     prob_t     m_currProbing;   // collision handling policy
 
-    Person**   m_oldTable;      // hash table
+    CacheEntry**   m_oldTable;      // hash table
     int        m_oldCap;        // hash table size (capacity)
     int        m_oldSize;       // current number of entries
                                 // m_oldSize includes deleted entries
@@ -113,10 +113,10 @@ class Cache {
     * Private function declarations go here! *
     ******************************************/
     int probeIndex(int hashedKey, int i, int capacity, prob_t policy) const;
-    int locateInsertionSlot(Person& p, Person** table, int capacity, prob_t policy);
-    bool personExists(Person& p, Person** table, int capacity, prob_t policy);
-    int findPersonIndex(Person& p, Person** table, int capacity, prob_t policy) const;
-    void reinsertFromOld(Person* p);
+    int locateInsertionSlot(CacheEntry& entry, CacheEntry** table, int capacity, prob_t policy);
+    bool entryExists(CacheEntry& entry, CacheEntry** table, int capacity, prob_t policy);
+    int findEntryIndex(CacheEntry& entry, CacheEntry** table, int capacity, prob_t policy) const;
+    void reinsertFromOld(CacheEntry* entry);
     void startNewRehash();
     void transferPartOfTable();
 };
