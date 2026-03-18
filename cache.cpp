@@ -16,7 +16,7 @@ Cache::Cache(int size, hash_fn hash, prob_t probing = DEFPOLCY){
         m_currentCap = size;
     }
     // Allocate current table
-    m_currentTable = new Person*[m_currentCap];
+    m_currentTable = new CacheEntry*[m_currentCap];
     for (int i = 0; i < m_currentCap; i++) {
         m_currentTable[i] = nullptr;
     }
@@ -95,7 +95,7 @@ int Cache::probeIndex(int hashedKey, int i, int capacity, prob_t policy) const {
     return value;
 }
 // locateInesrtionSlot: Probe table and get valid empty slot index
-int Cache::locateInsertionSlot(Person& p, Person** table, int capacity, prob_t policy) {
+int Cache::locateInsertionSlot(CacheEntry& p, CacheEntry** table, int capacity, prob_t policy) {
     // Compute hash
     int hashedKey = m_hash(p.getKey());
     int index = 0;
@@ -112,20 +112,20 @@ int Cache::locateInsertionSlot(Person& p, Person** table, int capacity, prob_t p
     }
     return -1;
 }
-// personExists: check if the person exists in the table
-bool Cache::personExists(Person& p, Person** table, int capacity, prob_t policy) {
+// entryExists: check if the entry exists in the table
+bool Cache::entryExists(CacheEntry& p, CacheEntry** table, int capacity, prob_t policy) {
     // Compute hash
     int hashedKey = m_hash(p.getKey());
     // Loop
     for (int i = 0; i < capacity; i++) {
         // Get index
         int index = probeIndex(hashedKey, i, capacity, policy);
-        // If index location is nullptr, then person cannot be anywhere beyond
+        // If index location is nullptr, then entry cannot be anywhere beyond
         if (table[index] == nullptr) {
             return false;
-        // If a person exists at the index
+        // If an entry exists at the index
         } else if (table[index] != nullptr && table[index]->m_used == true) {
-            // Compare person's ID and Key and return true if match
+            // Compare entry's ID and Key and return true if match
             if (table[index]->getID() == p.getID() && table[index]->getKey() == p.getKey()) {
                 return true;
             }
@@ -151,7 +151,7 @@ void Cache::startNewRehash() {
     int newCapacity = findNextPrime(value);
     // Allocate new table
     m_currentCap = newCapacity;
-    m_currentTable = new Person*[m_currentCap];
+    m_currentTable = new CacheEntry*[m_currentCap];
     for (int i = 0; i < m_currentCap; i++) {
         m_currentTable[i] = nullptr;
     }
@@ -164,8 +164,8 @@ void Cache::startNewRehash() {
     m_transferIndex = 0;
     
 }
-// reinsertFromOld: Grab the person from old table and insert into current table
-void Cache::reinsertFromOld(Person* p) {
+// reinsertFromOld: Grab the entry from old table and insert into current table
+void Cache::reinsertFromOld(CacheEntry* p) {
     int hashedKey = m_hash(p->getKey());
 
     for (int i = 0; i < m_currentCap; i++) {
@@ -196,11 +196,11 @@ void Cache::transferPartOfTable() {
     int partToTransfer = floor(m_oldCap * 0.25);
     // Loop throught the old table
     for (int i = m_transferIndex; i < (m_transferIndex + partToTransfer) && i < m_oldCap; i++) {
-        // If the index contains a person
+        // If the index contains an entry
         if (m_oldTable[i] != nullptr && m_oldTable[i]->m_used == true) {
-            // Store the person and insert into the new table
-            Person* p = m_oldTable[i];
-            // Remove person from old table
+            // Store the entry and insert into the new table
+            CacheEntry* p = m_oldTable[i];
+            // Remove entry from old table
             m_oldTable[i] = nullptr;
             m_oldSize--;
             // Insert into new table
@@ -232,23 +232,23 @@ void Cache::transferPartOfTable() {
 }
 
 // insert: Inserts an object into the current hash table
-bool Cache::insert(Person person){
+bool Cache::insert(CacheEntry entry){
     // Insert causes the transfer
     if (m_oldTable != nullptr) {
         transferPartOfTable();
     }
     // Validate ID
-    if (person.getID() < MINID || person.getID() > MAXID) {
+    if (entry.getID() < MINID || entry.getID() > MAXID) {
         return false;
     }    
-    // Check is the person already exists in the current and old tables
-    if (personExists(person, m_currentTable, m_currentCap, m_currProbing) == true) {
+    // Check if the entry already exists in the current and old tables
+    if (entryExists(entry, m_currentTable, m_currentCap, m_currProbing) == true) {
         return false;
-    } else if (m_oldTable != nullptr && personExists(person, m_oldTable, m_oldCap, m_oldProbing) == true) {
+    } else if (m_oldTable != nullptr && entryExists(entry, m_oldTable, m_oldCap, m_oldProbing) == true) {
         return false;
     }
     // Get the insertion spot
-    int insertionSpot = locateInsertionSlot(person, m_currentTable, m_currentCap, m_currProbing);
+    int insertionSpot = locateInsertionSlot(entry, m_currentTable, m_currentCap, m_currProbing);
     // Validate insertion spot
     if (insertionSpot == -1) {
         return false;
@@ -257,11 +257,11 @@ bool Cache::insert(Person person){
     if (m_currentTable[insertionSpot] != nullptr && m_currentTable[insertionSpot]->m_used == false) {
         m_currNumDeleted--;
     }
-    // Allocate new person
-    Person* newPerson = new Person(person);
+    // Allocate new entry
+    CacheEntry* newEntry = new CacheEntry(entry);
     // Insert to the spot and set values
-    m_currentTable[insertionSpot] = newPerson;
-    newPerson->m_used = true;
+    m_currentTable[insertionSpot] = newEntry;
+    newEntry->m_used = true;
     m_currentSize++;
 
     if (m_oldTable == nullptr) {
@@ -275,8 +275,8 @@ bool Cache::insert(Person person){
     }
     return true;
 }
-// findPersonIndex: Get the exact index where the Person lives
-int Cache::findPersonIndex(Person& p, Person** table, int capacity, prob_t policy) const {
+// findEntryIndex: Get the exact index where the CacheEntry lives
+int Cache::findEntryIndex(CacheEntry& p, CacheEntry** table, int capacity, prob_t policy) const {
     // Compute hash
     int hashedKey = m_hash(p.getKey());
     // Loop through the table
@@ -288,7 +288,7 @@ int Cache::findPersonIndex(Person& p, Person** table, int capacity, prob_t polic
             return -1;
         } else if (table[index] != nullptr && table[index]->m_used == false) {
             continue;
-        // If person exists in that index
+        // If entry exists in that index
         } else if (table[index] != nullptr && table[index]->m_used == true) {
             // Compare key and ID and return true if match
             if (table[index]->getID() == p.getID() && table[index]->getKey() == p.getKey()) {
@@ -299,26 +299,26 @@ int Cache::findPersonIndex(Person& p, Person** table, int capacity, prob_t polic
     return -1;
 }
 // remove: Removes a data point from either the current hash table or the old hash table where the object is stored
-bool Cache::remove(Person person){
+bool Cache::remove(CacheEntry entry){
     // Remove causes the transfer
     if (m_oldTable != nullptr) {
         transferPartOfTable();
     }
 
     bool removedFromCurrTable = false;
-    // Get index of the person
-    int personIndex = findPersonIndex(person, m_currentTable, m_currentCap, m_currProbing);
+    // Get index of the entry
+    int entryIndex = findEntryIndex(entry, m_currentTable, m_currentCap, m_currProbing);
     // Validate index
-    if (personIndex >= 0) {
-        // If index is valid, then set the person's m_used to false and decrement counter
-        m_currentTable[personIndex]->m_used = false;
+    if (entryIndex >= 0) {
+        // If index is valid, then set the entry's m_used to false and decrement counter
+        m_currentTable[entryIndex]->m_used = false;
         m_currNumDeleted++;
         removedFromCurrTable = true;
     }
     // Check old table
     if (removedFromCurrTable == false && m_oldTable != nullptr) {
-        int oldTableIndex = findPersonIndex(person, m_oldTable, m_oldCap, m_oldProbing);
-        // If person exists in old table, then set the person's m_used to false and decrement counter
+        int oldTableIndex = findEntryIndex(entry, m_oldTable, m_oldCap, m_oldProbing);
+        // If entry exists in old table, then set the entry's m_used to false and decrement counter
         if (oldTableIndex >= 0) {
             m_oldTable[oldTableIndex]->m_used = false;
             m_oldNumDeleted++;
@@ -337,52 +337,52 @@ bool Cache::remove(Person person){
     }
     return removedFromCurrTable;
 }
-// getPerson: Looks for the Person object with the sequence and the ID in the database
-const Person Cache::getPerson(string key, int ID) const{
-    // Create temporary person to function call
-    Person tempPerson;
-    tempPerson.m_key = key;
-    tempPerson.m_id = ID;
-    tempPerson.m_used = true;
+// getCacheEntry: Looks for the CacheEntry object with the sequence and the ID in the database
+const CacheEntry Cache::getCacheEntry(string key, int ID) const{
+    // Create temporary entry to function call
+    CacheEntry tempEntry;
+    tempEntry.m_key = key;
+    tempEntry.m_id = ID;
+    tempEntry.m_used = true;
     // Get index
-    int personIndex = findPersonIndex(tempPerson, m_currentTable, m_currentCap, m_currProbing);
+    int entryIndex = findEntryIndex(tempEntry, m_currentTable, m_currentCap, m_currProbing);
     // Validate index
-    if (personIndex >= 0) {
-        // Return person
-        return *m_currentTable[personIndex];
+    if (entryIndex >= 0) {
+        // Return entry
+        return *m_currentTable[entryIndex];
     }
     // Check old table
     if (m_oldTable != nullptr) {
         
-        int personOldIndex = findPersonIndex(tempPerson, m_oldTable, m_oldCap, m_oldProbing);
+        int entryOldIndex = findEntryIndex(tempEntry, m_oldTable, m_oldCap, m_oldProbing);
         // Validate index
-        if (personOldIndex >= 0) {
-            // Return person
-            return *m_oldTable[personOldIndex];
+        if (entryOldIndex >= 0) {
+            // Return entry
+            return *m_oldTable[entryOldIndex];
         }
     }
-    // Return empty person if not found
-    return Person("", 0, false);
+    // Return empty entry if not found
+    return CacheEntry("", 0, false);
 }
-// updateID: Looks for the Person object in the database
-bool Cache::updateID(Person person, int ID){
+// updateID: Looks for the CacheEntry object in the database
+bool Cache::updateID(CacheEntry entry, int ID){
     if (ID < MINID || ID > MAXID) {
         return false;
     }
 
-    Person tempPerson;
-    tempPerson.m_key = person.getKey();
-    tempPerson.m_id = person.getID();
-    tempPerson.m_used = true;
+    CacheEntry tempEntry;
+    tempEntry.m_key = entry.getKey();
+    tempEntry.m_id = entry.getID();
+    tempEntry.m_used = true;
 
-    int index = findPersonIndex(tempPerson, m_currentTable, m_currentCap, m_currProbing);
+    int index = findEntryIndex(tempEntry, m_currentTable, m_currentCap, m_currProbing);
 
     if (index >= 0) {
         m_currentTable[index]->m_id = ID;
         return true;
     } else {
         if (m_oldTable != nullptr) {
-            int oldIndex = findPersonIndex(tempPerson, m_oldTable, m_oldCap, m_oldProbing);
+            int oldIndex = findEntryIndex(tempEntry, m_oldTable, m_oldCap, m_oldProbing);
 
             if (oldIndex >= 0) {
                 m_oldTable[oldIndex]->m_id = ID;
