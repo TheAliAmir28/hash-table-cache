@@ -4,7 +4,7 @@ A C++ hash table/cache engine that uses open addressing, lazy deletion, configur
 
 This project focuses on a common systems tradeoff: traditional hash tables can pause noticeably when they resize because all live entries are migrated at once. This implementation spreads that migration across later operations, reducing worst-case resize behavior while preserving average-case hash table performance.
 
-![Benchmark dashboard](results/benchmark_dashboard.png)
+![Benchmark dashboard](results/latency_comparison.png)
 
 ## Highlights
 
