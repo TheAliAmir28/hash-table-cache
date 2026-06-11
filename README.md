@@ -133,8 +133,3 @@ python scripts/plot_results.py
 - Convert tests to Catch2 or GoogleTest.
 - Expand benchmarks with multiple trials, larger workloads, and sanitizer builds.
 - Add cache-oriented features such as LRU eviction, hit/miss counters, and configurable capacity.
-
-## Resume Framing
-
-Built a C++ hash-table cache with open addressing, lazy deletion, selectable probing policies, and incremental rehashing to reduce resize-related latency spikes. Created benchmark tooling and visualizations comparing incremental migration against a naive full-rehash baseline and `std::unordered_map`.
-
