@@ -12,9 +12,9 @@ public:
     ~NaiveCache();
     
     // Core operations (same as Cache)
-    bool insert(CacheEntry entry);
-    bool remove(CacheEntry entry);
-    const CacheEntry getCacheEntry(string key, int ID) const;
+    bool insert(const CacheEntry& entry);
+    bool remove(const CacheEntry& entry);
+    CacheEntry getCacheEntry(std::string key, int ID) const;
     
     // Expose for benchmarking
     int getCurrentSize() const { return m_currentSize; }
@@ -27,10 +27,10 @@ private:
     void fullRehash();
     
     // Helper functions (same as Cache)
-    int probeIndex(int hashedKey, int i, int capacity, prob_t policy) const;
-    int locateInsertionSlot(CacheEntry& p, CacheEntry** table, int capacity, prob_t policy);
-    bool entryExists(CacheEntry& p, CacheEntry** table, int capacity, prob_t policy);
-    int findEntryIndex(CacheEntry& p, CacheEntry** table, int capacity, prob_t policy) const;
+    int probeIndex(unsigned int hashedKey, int i, int capacity, prob_t policy) const;
+    int locateInsertionSlot(const CacheEntry& p, CacheEntry** table, int capacity, prob_t policy);
+    bool entryExists(const CacheEntry& p, CacheEntry** table, int capacity, prob_t policy);
+    int findEntryIndex(const CacheEntry& p, CacheEntry** table, int capacity, prob_t policy) const;
     
     // Utility functions
     bool isPrime(int number);

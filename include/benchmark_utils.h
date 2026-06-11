@@ -20,20 +20,19 @@ using namespace std::chrono;
 // ===================================================================
 class Timer {
 private:
-    high_resolution_clock::time_point m_start;
+    steady_clock::time_point m_start;
     
 public:
     // Start the timer
     void start() {
-        m_start = high_resolution_clock::now();
+        m_start = steady_clock::now();
     }
     
     // Returns elapsed time in microseconds (μs)
     // 1 second = 1,000,000 microseconds
     double elapsed() {
-        auto end = high_resolution_clock::now();
-        auto duration = duration_cast<microseconds>(end - m_start);
-        return duration.count();
+        auto end = steady_clock::now();
+        return duration<double, micro>(end - m_start).count();
     }
 };
 
@@ -121,7 +120,6 @@ public:
 class TestDataGenerator {
 private:
     mt19937 m_generator;
-    uniform_int_distribution<int> m_idDist;
     uniform_int_distribution<int> m_keyDist;
     
     // Sample search strings (same as in driver.cpp)
@@ -132,14 +130,13 @@ public:
     // Constructor with optional seed (default 42 for reproducibility)
     TestDataGenerator(int seed = 42) 
         : m_generator(seed), 
-          m_idDist(MINID, MAXID),
           m_keyDist(0, 7) {
     }
     
-    // Generate a single random CacheEntry
+    // Generate a single reproducible entry with a unique key/id pair.
     CacheEntry generateEntry(int index) {
-        string key = searchStr[m_keyDist(m_generator)];
-        int id = m_idDist(m_generator);
+        string key = searchStr[m_keyDist(m_generator)] + "_" + to_string(index);
+        int id = MINID + (index % (MAXID - MINID + 1));
         return CacheEntry(key, id, true);
     }
     

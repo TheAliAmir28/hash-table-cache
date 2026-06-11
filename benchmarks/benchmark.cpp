@@ -2,8 +2,10 @@
 #include "cache.h"
 #include "naive_cache.h"
 #include "benchmark_utils.h"
+#include <filesystem>
 #include <iostream>
 #include <iomanip>
+#include <sstream>
 #include <unordered_map>
 
 using namespace std;
@@ -15,6 +17,33 @@ unsigned int hashCode(const string str) {
     for (int i = 0; i < (int)(str.length()); i++)
         val = val * thirtyThree + str[i];
     return val;
+}
+
+double median(vector<double> values) {
+    if (values.empty()) {
+        return 0.0;
+    }
+
+    sort(values.begin(), values.end());
+    return values[values.size() / 2];
+}
+
+template <typename TrialRunner>
+double runThroughputTrials(const string& label, int trials, TrialRunner runTrial) {
+    vector<double> results;
+    results.reserve(trials);
+
+    for (int trial = 0; trial < trials; trial++) {
+        double opsPerSec = runTrial(trial);
+        results.push_back(opsPerSec);
+        cout << "  Trial " << (trial + 1) << "/" << trials << ": "
+             << fixed << setprecision(0) << opsPerSec << " ops/sec" << endl;
+    }
+
+    double medianOps = median(results);
+    cout << "  Median " << label << " throughput: "
+         << fixed << setprecision(0) << medianOps << " ops/sec" << endl;
+    return medianOps;
 }
 
 // ===================================================================
@@ -121,34 +150,32 @@ void benchmarkThroughput() {
     cout << "\n========================================" << endl;
     cout << "BENCHMARK 2: Throughput (ops/sec)" << endl;
     cout << "========================================" << endl;
-    cout << "Measuring operations per second..." << endl;
+    cout << "Measuring median operations per second across repeated trials..." << endl;
     
     const int NUM_OPERATIONS = 50000;
     const int WARMUP = 1000;
-    TestDataGenerator dataGen;
+    const int TRIALS = 5;
     
     // Incremental rehashing
     {
         cout << "\n[1/3] Testing Incremental Rehashing..." << endl;
-        Cache cache(MINPRIME, hashCode, DOUBLEHASH);
-        
-        // Warmup
-        for (int i = 0; i < WARMUP; i++) {
-            cache.insert(dataGen.generateEntry(i));
-        }
-        
-        // Actual test
-        auto start = high_resolution_clock::now();
-        for (int i = 0; i < NUM_OPERATIONS; i++) {
-            cache.insert(dataGen.generateEntry(i + WARMUP));
-        }
-        auto end = high_resolution_clock::now();
-        
-        auto duration = duration_cast<milliseconds>(end - start).count();
-        double opsPerSec = (NUM_OPERATIONS * 1000.0) / duration;
-        
-        cout << "  Time: " << duration << " ms" << endl;
-        cout << "  Throughput: " << fixed << setprecision(0) << opsPerSec << " ops/sec" << endl;
+        double opsPerSec = runThroughputTrials("Incremental", TRIALS, [&](int trial) {
+            TestDataGenerator dataGen(100 + trial);
+            Cache cache(MINPRIME, hashCode, DOUBLEHASH);
+
+            for (int i = 0; i < WARMUP; i++) {
+                cache.insert(dataGen.generateEntry(i));
+            }
+
+            auto start = steady_clock::now();
+            for (int i = 0; i < NUM_OPERATIONS; i++) {
+                cache.insert(dataGen.generateEntry(i + WARMUP));
+            }
+            auto end = steady_clock::now();
+
+            auto duration = max<long long>(duration_cast<microseconds>(end - start).count(), 1);
+            return (NUM_OPERATIONS * 1000000.0) / duration;
+        });
         
         // Save to CSV
         ofstream file("results/throughput.csv", ios::app);
@@ -159,25 +186,23 @@ void benchmarkThroughput() {
     // Naive rehashing
     {
         cout << "\n[2/3] Testing Naive Full Rehashing..." << endl;
-        NaiveCache cache(MINPRIME, hashCode, DOUBLEHASH);
-        
-        // Warmup
-        for (int i = 0; i < WARMUP; i++) {
-            cache.insert(dataGen.generateEntry(i));
-        }
-        
-        // Actual test
-        auto start = high_resolution_clock::now();
-        for (int i = 0; i < NUM_OPERATIONS; i++) {
-            cache.insert(dataGen.generateEntry(i + WARMUP));
-        }
-        auto end = high_resolution_clock::now();
-        
-        auto duration = duration_cast<milliseconds>(end - start).count();
-        double opsPerSec = (NUM_OPERATIONS * 1000.0) / duration;
-        
-        cout << "  Time: " << duration << " ms" << endl;
-        cout << "  Throughput: " << fixed << setprecision(0) << opsPerSec << " ops/sec" << endl;
+        double opsPerSec = runThroughputTrials("Naive", TRIALS, [&](int trial) {
+            TestDataGenerator dataGen(100 + trial);
+            NaiveCache cache(MINPRIME, hashCode, DOUBLEHASH);
+
+            for (int i = 0; i < WARMUP; i++) {
+                cache.insert(dataGen.generateEntry(i));
+            }
+
+            auto start = steady_clock::now();
+            for (int i = 0; i < NUM_OPERATIONS; i++) {
+                cache.insert(dataGen.generateEntry(i + WARMUP));
+            }
+            auto end = steady_clock::now();
+
+            auto duration = max<long long>(duration_cast<microseconds>(end - start).count(), 1);
+            return (NUM_OPERATIONS * 1000000.0) / duration;
+        });
         
         // Save to CSV
         ofstream file("results/throughput.csv", ios::app);
@@ -188,27 +213,25 @@ void benchmarkThroughput() {
     // std::unordered_map
     {
         cout << "\n[3/3] Testing std::unordered_map..." << endl;
-        unordered_map<string, CacheEntry> stdMap;
-        
-        // Warmup
-        for (int i = 0; i < WARMUP; i++) {
-            CacheEntry p = dataGen.generateEntry(i);
-            stdMap[p.getKey() + to_string(p.getID())] = p;
-        }
-        
-        // Actual test
-        auto start = high_resolution_clock::now();
-        for (int i = 0; i < NUM_OPERATIONS; i++) {
-            CacheEntry p = dataGen.generateEntry(i + WARMUP);
-            stdMap[p.getKey() + to_string(p.getID())] = p;
-        }
-        auto end = high_resolution_clock::now();
-        
-        auto duration = duration_cast<milliseconds>(end - start).count();
-        double opsPerSec = (NUM_OPERATIONS * 1000.0) / duration;
-        
-        cout << "  Time: " << duration << " ms" << endl;
-        cout << "  Throughput: " << fixed << setprecision(0) << opsPerSec << " ops/sec" << endl;
+        double opsPerSec = runThroughputTrials("std::unordered_map", TRIALS, [&](int trial) {
+            TestDataGenerator dataGen(100 + trial);
+            unordered_map<string, CacheEntry> stdMap;
+
+            for (int i = 0; i < WARMUP; i++) {
+                CacheEntry p = dataGen.generateEntry(i);
+                stdMap[p.getKey() + to_string(p.getID())] = p;
+            }
+
+            auto start = steady_clock::now();
+            for (int i = 0; i < NUM_OPERATIONS; i++) {
+                CacheEntry p = dataGen.generateEntry(i + WARMUP);
+                stdMap[p.getKey() + to_string(p.getID())] = p;
+            }
+            auto end = steady_clock::now();
+
+            auto duration = max<long long>(duration_cast<microseconds>(end - start).count(), 1);
+            return (NUM_OPERATIONS * 1000000.0) / duration;
+        });
         
         // Save to CSV
         ofstream file("results/throughput.csv", ios::app);
@@ -331,39 +354,49 @@ void printSummary() {
     cout << "KEY FINDINGS:" << endl;
     cout << "-------------" << endl;
     
-    double incP99 = 0, naiveP99 = 0;
+    double incP99 = 0, naiveP99 = 0, incMax = 0, naiveMax = 0;
     while (getline(latencyFile, line)) {
-        if (line.find("Incremental") != string::npos) {
-            size_t pos = line.rfind(',');
-            size_t pos2 = line.rfind(',', pos - 1);
-            string p99str = line.substr(pos2 + 1, pos - pos2 - 1);
-            incP99 = stod(p99str);
+        vector<string> fields;
+        string field;
+        stringstream row(line);
+
+        while (getline(row, field, ',')) {
+            fields.push_back(field);
         }
-        if (line.find("Naive") != string::npos) {
-            size_t pos = line.rfind(',');
-            size_t pos2 = line.rfind(',', pos - 1);
-            string p99str = line.substr(pos2 + 1, pos - pos2 - 1);
-            naiveP99 = stod(p99str);
+
+        if (fields.size() >= 7 && fields[0] == "Incremental") {
+            incP99 = stod(fields[5]);
+            incMax = stod(fields[6]);
+        }
+        if (fields.size() >= 7 && fields[0] == "Naive") {
+            naiveP99 = stod(fields[5]);
+            naiveMax = stod(fields[6]);
         }
     }
     latencyFile.close();
     
     if (incP99 > 0 && naiveP99 > 0) {
         double improvement = ((naiveP99 - incP99) / naiveP99) * 100;
-        cout << "1. P99 Latency Improvement: " << fixed << setprecision(1) 
+        cout << "1. P99 Latency Delta: " << fixed << setprecision(1)
              << improvement << "%" << endl;
         cout << "   - Incremental: " << incP99 << " μs" << endl;
         cout << "   - Naive:       " << naiveP99 << " μs" << endl;
-        cout << "   - " << fixed << setprecision(1) << (naiveP99 / incP99) 
-             << "x better worst-case performance!" << endl;
+    }
+
+    if (incMax > 0 && naiveMax > 0) {
+        double maxReduction = ((naiveMax - incMax) / naiveMax) * 100;
+        cout << "\n2. Max Latency Reduction: " << fixed << setprecision(1)
+             << maxReduction << "%" << endl;
+        cout << "   - Incremental: " << incMax << " us" << endl;
+        cout << "   - Naive:       " << naiveMax << " us" << endl;
     }
     
-    cout << "\n2. All results saved to results/ directory:" << endl;
+    cout << "\n3. All results saved to results/ directory:" << endl;
     cout << "   - latency.csv" << endl;
     cout << "   - throughput.csv" << endl;
     cout << "   - spikes.csv" << endl;
     
-    cout << "\n3. Next steps:" << endl;
+    cout << "\n4. Next steps:" << endl;
     cout << "   - Review CSV files for detailed data" << endl;
     cout << "   - Create graphs using plot_results.py (optional)" << endl;
     cout << "   - Add these results to your resume/portfolio!" << endl;
@@ -381,11 +414,7 @@ int main() {
     cout << "Estimated time: 2-3 minutes\n" << endl;
     
     // Create results directory (cross-platform)
-    #ifdef _WIN32
-        system("if not exist results mkdir results");
-    #else
-        system("mkdir -p results");
-    #endif
+    filesystem::create_directories("results");
     
     // Initialize CSV files with headers
     ofstream latencyFile("results/latency.csv");

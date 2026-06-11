@@ -1,6 +1,10 @@
 #include "cache.h"
+
+using std::cout;
+using std::endl;
+using std::string;
 // Constructor
-Cache::Cache(int size, hash_fn hash, prob_t probing = DEFPOLCY){
+Cache::Cache(int size, hash_fn hash, prob_t probing){
     // Store hash
     m_hash = hash;
     m_currProbing = probing;
@@ -74,30 +78,31 @@ void Cache::changeProbPolicy(prob_t policy){
     m_newPolicy = policy;
 }
 //probeIndex: Get the right index
-int Cache::probeIndex(int hashedKey, int i, int capacity, prob_t policy) const {
+int Cache::probeIndex(unsigned int hashedKey, int i, int capacity, prob_t policy) const {
     int value = 0;
+    int base = static_cast<int>(hashedKey % capacity);
     // Linear probing formula
     if (policy == LINEAR) {
-        value = (hashedKey + i) % capacity;
+        value = (base + i) % capacity;
     // Quadratic probing formula
     } else if (policy == QUADRATIC) {
-        value = (hashedKey + i * i) % capacity;
+        value = static_cast<int>((base + 1LL * i * i) % capacity);
     // Double hashing formula
     } else if (policy == DOUBLEHASH) {
         // if secondary hash function is 0, then set it to 1 to prevent infinite loop
-        int dbValue = 11 - (hashedKey % 11);
+        int dbValue = 11 - static_cast<int>(hashedKey % 11);
         if (dbValue == 0) {
             dbValue = 1;
         }
         // Compute double hashing index
-        value = (hashedKey + i * dbValue) % capacity;
+        value = static_cast<int>((base + 1LL * i * dbValue) % capacity);
     }
     return value;
 }
 // locateInesrtionSlot: Probe table and get valid empty slot index
-int Cache::locateInsertionSlot(CacheEntry& p, CacheEntry** table, int capacity, prob_t policy) {
+int Cache::locateInsertionSlot(const CacheEntry& p, CacheEntry** table, int capacity, prob_t policy) {
     // Compute hash
-    int hashedKey = m_hash(p.getKey());
+    unsigned int hashedKey = m_hash(p.getKey());
     int index = 0;
     // Loop through table to locate appropriate spot
     for (int i = 0; i < capacity; i++) {
@@ -113,9 +118,9 @@ int Cache::locateInsertionSlot(CacheEntry& p, CacheEntry** table, int capacity, 
     return -1;
 }
 // entryExists: check if the entry exists in the table
-bool Cache::entryExists(CacheEntry& p, CacheEntry** table, int capacity, prob_t policy) {
+bool Cache::entryExists(const CacheEntry& p, CacheEntry** table, int capacity, prob_t policy) {
     // Compute hash
-    int hashedKey = m_hash(p.getKey());
+    unsigned int hashedKey = m_hash(p.getKey());
     // Loop
     for (int i = 0; i < capacity; i++) {
         // Get index
@@ -166,7 +171,7 @@ void Cache::startNewRehash() {
 }
 // reinsertFromOld: Grab the entry from old table and insert into current table
 void Cache::reinsertFromOld(CacheEntry* p) {
-    int hashedKey = m_hash(p->getKey());
+    unsigned int hashedKey = m_hash(p->getKey());
 
     for (int i = 0; i < m_currentCap; i++) {
         int index = probeIndex(hashedKey, i, m_currentCap, m_currProbing);
@@ -232,7 +237,7 @@ void Cache::transferPartOfTable() {
 }
 
 // insert: Inserts an object into the current hash table
-bool Cache::insert(CacheEntry entry){
+bool Cache::insert(const CacheEntry& entry){
     // Insert causes the transfer
     if (m_oldTable != nullptr) {
         transferPartOfTable();
@@ -276,9 +281,9 @@ bool Cache::insert(CacheEntry entry){
     return true;
 }
 // findEntryIndex: Get the exact index where the CacheEntry lives
-int Cache::findEntryIndex(CacheEntry& p, CacheEntry** table, int capacity, prob_t policy) const {
+int Cache::findEntryIndex(const CacheEntry& p, CacheEntry** table, int capacity, prob_t policy) const {
     // Compute hash
-    int hashedKey = m_hash(p.getKey());
+    unsigned int hashedKey = m_hash(p.getKey());
     // Loop through the table
     for (int i = 0; i < capacity; i++) {
         // Get index
@@ -299,7 +304,7 @@ int Cache::findEntryIndex(CacheEntry& p, CacheEntry** table, int capacity, prob_
     return -1;
 }
 // remove: Removes a data point from either the current hash table or the old hash table where the object is stored
-bool Cache::remove(CacheEntry entry){
+bool Cache::remove(const CacheEntry& entry){
     // Remove causes the transfer
     if (m_oldTable != nullptr) {
         transferPartOfTable();
@@ -338,7 +343,7 @@ bool Cache::remove(CacheEntry entry){
     return removedFromCurrTable;
 }
 // getCacheEntry: Looks for the CacheEntry object with the sequence and the ID in the database
-const CacheEntry Cache::getCacheEntry(string key, int ID) const{
+CacheEntry Cache::getCacheEntry(string key, int ID) const{
     // Create temporary entry to function call
     CacheEntry tempEntry;
     tempEntry.m_key = key;
@@ -365,7 +370,7 @@ const CacheEntry Cache::getCacheEntry(string key, int ID) const{
     return CacheEntry("", 0, false);
 }
 // updateID: Looks for the CacheEntry object in the database
-bool Cache::updateID(CacheEntry entry, int ID){
+bool Cache::updateID(const CacheEntry& entry, int ID){
     if (ID < MINID || ID > MAXID) {
         return false;
     }
@@ -394,6 +399,30 @@ bool Cache::updateID(CacheEntry entry, int ID){
     return false;
     
 }
+
+CacheStats Cache::getStats() const {
+    CacheStats stats;
+    stats.currentCapacity = m_currentCap;
+    stats.currentSize = m_currentSize;
+    stats.currentDeleted = m_currNumDeleted;
+    stats.oldCapacity = m_oldCap;
+    stats.oldSize = m_oldSize;
+    stats.oldDeleted = m_oldNumDeleted;
+    stats.liveEntries = (m_currentSize - m_currNumDeleted) + (m_oldSize - m_oldNumDeleted);
+    stats.loadFactor = lambda();
+    stats.deletedRatio = deletedRatio();
+    stats.rehashInProgress = (m_oldTable != nullptr);
+
+    if (stats.rehashInProgress && m_oldCap > 0) {
+        stats.rehashProgress = static_cast<float>(m_transferIndex) / m_oldCap;
+        if (stats.rehashProgress > 1.0F) {
+            stats.rehashProgress = 1.0F;
+        }
+    }
+
+    return stats;
+}
+
 // lambda: Returns the load factor of the current hash table
 float Cache::lambda() const {
     return float(m_currentSize) / m_currentCap;

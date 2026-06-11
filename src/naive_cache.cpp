@@ -1,6 +1,8 @@
 // Naive Cache Implementation - Full Rehashing Version
 #include "naive_cache.h"
 
+using std::string;
+
 // Constructor
 NaiveCache::NaiveCache(int size, hash_fn hash, prob_t probing) {
     m_hash = hash;
@@ -57,7 +59,7 @@ void NaiveCache::fullRehash() {
             CacheEntry* p = m_currentTable[i];
             
             // Find slot in new table using current probing policy
-            int hashedKey = m_hash(p->getKey());
+            unsigned int hashedKey = m_hash(p->getKey());
             for (int j = 0; j < newCapacity; j++) {
                 int index = probeIndex(hashedKey, j, newCapacity, m_currProbing);
                 if (newTable[index] == nullptr) {
@@ -82,7 +84,7 @@ void NaiveCache::fullRehash() {
 }
 
 // Insert operation
-bool NaiveCache::insert(CacheEntry entry) {
+bool NaiveCache::insert(const CacheEntry& entry) {
     // Validate ID
     if (entry.getID() < MINID || entry.getID() > MAXID) {
         return false;
@@ -122,7 +124,7 @@ bool NaiveCache::insert(CacheEntry entry) {
 }
 
 // Remove operation
-bool NaiveCache::remove(CacheEntry entry) {
+bool NaiveCache::remove(const CacheEntry& entry) {
     int entryIndex = findEntryIndex(entry, m_currentTable, m_currentCap, m_currProbing);
     
     if (entryIndex >= 0) {
@@ -144,7 +146,7 @@ bool NaiveCache::remove(CacheEntry entry) {
 }
 
 // Get entry operation
-const CacheEntry NaiveCache::getCacheEntry(string key, int ID) const {
+CacheEntry NaiveCache::getCacheEntry(string key, int ID) const {
     CacheEntry tempEntry;
     tempEntry.setKey(key);
     tempEntry.setID(ID);
@@ -174,27 +176,28 @@ float NaiveCache::deletedRatio() const {
 }
 
 // Probe index calculation (same as Cache)
-int NaiveCache::probeIndex(int hashedKey, int i, int capacity, prob_t policy) const {
+int NaiveCache::probeIndex(unsigned int hashedKey, int i, int capacity, prob_t policy) const {
     int value = 0;
+    int base = static_cast<int>(hashedKey % capacity);
     
     if (policy == LINEAR) {
-        value = (hashedKey + i) % capacity;
+        value = (base + i) % capacity;
     } else if (policy == QUADRATIC) {
-        value = (hashedKey + i * i) % capacity;
+        value = static_cast<int>((base + 1LL * i * i) % capacity);
     } else if (policy == DOUBLEHASH) {
-        int dbValue = 11 - (hashedKey % 11);
+        int dbValue = 11 - static_cast<int>(hashedKey % 11);
         if (dbValue == 0) {
             dbValue = 1;
         }
-        value = (hashedKey + i * dbValue) % capacity;
+        value = static_cast<int>((base + 1LL * i * dbValue) % capacity);
     }
     
     return value;
 }
 
 // Locate insertion slot
-int NaiveCache::locateInsertionSlot(CacheEntry& p, CacheEntry** table, int capacity, prob_t policy) {
-    int hashedKey = m_hash(p.getKey());
+int NaiveCache::locateInsertionSlot(const CacheEntry& p, CacheEntry** table, int capacity, prob_t policy) {
+    unsigned int hashedKey = m_hash(p.getKey());
     int index = 0;
     
     for (int i = 0; i < capacity; i++) {
@@ -211,8 +214,8 @@ int NaiveCache::locateInsertionSlot(CacheEntry& p, CacheEntry** table, int capac
 }
 
 // Check if entry exists
-bool NaiveCache::entryExists(CacheEntry& p, CacheEntry** table, int capacity, prob_t policy) {
-    int hashedKey = m_hash(p.getKey());
+bool NaiveCache::entryExists(const CacheEntry& p, CacheEntry** table, int capacity, prob_t policy) {
+    unsigned int hashedKey = m_hash(p.getKey());
     
     for (int i = 0; i < capacity; i++) {
         int index = probeIndex(hashedKey, i, capacity, policy);
@@ -230,8 +233,8 @@ bool NaiveCache::entryExists(CacheEntry& p, CacheEntry** table, int capacity, pr
 }
 
 // Find entry index
-int NaiveCache::findEntryIndex(CacheEntry& p, CacheEntry** table, int capacity, prob_t policy) const {
-    int hashedKey = m_hash(p.getKey());
+int NaiveCache::findEntryIndex(const CacheEntry& p, CacheEntry** table, int capacity, prob_t policy) const {
+    unsigned int hashedKey = m_hash(p.getKey());
     
     for (int i = 0; i < capacity; i++) {
         int index = probeIndex(hashedKey, i, capacity, policy);

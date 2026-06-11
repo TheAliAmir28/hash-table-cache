@@ -3,9 +3,24 @@
 *.obj
 *.exe
 benchmark
+cache_benchmark
+cache_tests
+naive_cache_tests
+benchmark_utils_tests
+randomized_cache_tests
+cache_stats_tests
+cache_demo
 test_naive
 test_utils
 driver
+
+# CMake
+build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+Testing/
 
 # Test outputs
 test_output.csv

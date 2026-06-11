@@ -1,73 +1,140 @@
-# Hash Table with Incremental Rehashing
+# High-Performance Hash Table Engine
 
-A high-performance hash table implementation featuring incremental rehashing to eliminate latency spikes during table resizing.
+A C++ hash table/cache engine that uses open addressing, lazy deletion, configurable probing strategies, and incremental rehashing to smooth resize-related latency spikes.
 
-## Performance Benchmarks
+This project focuses on a common systems tradeoff: traditional hash tables can pause noticeably when they resize because all live entries are migrated at once. This implementation spreads that migration across later operations, reducing worst-case resize behavior while preserving average-case hash table performance.
 
-**Test System:** Intel i7-13700K (16 cores, 5.4GHz) + RTX 4070 Ti Super
+![Benchmark dashboard](results/benchmark_dashboard.png)
 
-### Key Results
-- **2.1x better throughput** (239 vs 116 ops/sec)
-- **42% lower worst-case latency** (5.3ms vs 9.1ms)
-- Eliminates 9ms rehashing pauses through incremental data transfer
+## Highlights
 
-![Benchmark Dashboard](results/benchmark_dashboard.png)
+- Implemented an open-addressed hash table with lazy deletion and tombstone cleanup.
+- Supported linear probing, quadratic probing, and double hashing collision policies.
+- Added incremental rehashing that migrates 25% of the old table per operation during resize.
+- Exposed cache metrics for live entries, tombstones, load factor, deleted ratio, and rehash progress.
+- Built a naive full-rehash implementation for controlled comparison.
+- Created a benchmark suite for throughput, P50/P95/P99 latency, max latency, and rehash spike behavior.
+- Generated Python/Matplotlib visualizations for benchmark analysis.
 
-## Features
+## Why This Exists
 
-### Core Implementation
-- **Incremental Rehashing**: Transfers 25% of data per operation to avoid pauses
-- **Multiple Collision Resolution**: Supports Linear, Quadratic, and Double Hashing
-- **Lazy Deletion**: Efficient removal with tombstone mechanism
-- **Dynamic Resizing**: Automatic table expansion based on load factor
+Full-table rehashing is simple, but it concentrates resize work into one operation. That can produce latency spikes even when average insertion time remains constant. Incremental rehashing keeps two tables temporarily: new writes go to the current table, while existing entries are gradually transferred from the old table into the new one.
 
-### Benchmark Suite
-- Comprehensive performance testing framework
-- Comparison with naive full-rehashing approach
-- Baseline comparison with `std::unordered_map`
-- Professional visualizations of results
+This makes the project a practical exploration of hash table internals, amortized complexity, memory management, and performance benchmarking.
+
+## Architecture
+
+```text
+Before resize
++---------------------+
+| current table       |
+| open addressing     |
+| tombstones allowed  |
++---------------------+
+
+Resize triggered by load factor or deletion ratio
+
+During incremental rehash
++---------------------+      +---------------------+
+| new current table   | <--- | old table           |
+| receives new writes |      | migrated in chunks  |
++---------------------+      +---------------------+
+
+After migration completes
++---------------------+
+| current table only  |
++---------------------+
+```
+
+## Benchmark Summary
+
+The benchmark suite compares three implementations:
+
+| Implementation | Purpose |
+| --- | --- |
+| Incremental | Custom hash table with incremental rehashing |
+| Naive | Custom hash table with full-table rehashing |
+| `std::unordered_map` | Standard library baseline |
+
+Current sample results are stored in `results/` and include:
+
+- `latency.csv`: average, P50, P95, P99, and max insertion latency
+- `throughput.csv`: operations per second
+- `spikes.csv`: latency before and during rehashing
+- `benchmark_dashboard.png`: combined visualization dashboard
+
+The strongest result to focus on is resize behavior: incremental rehashing reduces the size of resize-related pauses compared with the naive full-rehash implementation.
+
+Benchmark methodology:
+
+- Generates deterministic, unique key/id pairs so results are reproducible without collapsing into an artificial small-key collision test.
+- Uses a monotonic clock for timing measurements.
+- Reports throughput as the median operations per second across repeated trials.
 
 ## Project Structure
-```
-├── cache.h/cpp              # Main implementation (incremental rehashing)
-├── naive_cache.h/cpp        # Baseline comparison (full rehashing)
-├── benchmark.cpp            # Performance testing suite
-├── benchmark_utils.h        # Timing and statistics utilities
-├── plot_results.py          # Visualization generation
-└── results/                 # Benchmark output and graphs
+
+```text
+.
+|-- include/                         # Public headers
+|   |-- cache.h                      # Incremental rehashing hash table API
+|   |-- naive_cache.h                # Full-rehash baseline API
+|   `-- benchmark_utils.h            # Timing, stats, and data generation helpers
+|-- src/                             # Library and demo implementation
+|   |-- cache.cpp
+|   |-- naive_cache.cpp
+|   `-- demo.cpp
+|-- tests/                           # Functional, randomized, and metrics tests
+|-- benchmarks/                      # Benchmark runner
+|-- scripts/                         # Visualization scripts
+`-- results/                         # Generated benchmark charts
 ```
 
-## Building & Running
+## Build and Run
 
-### Compile
+### Configure and build with CMake
+
 ```bash
-g++ -std=c++11 -Wall -O2 cache.cpp benchmark.cpp naive_cache.cpp -o benchmark
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release
 ```
 
-### Run Benchmarks
+### Compile and run tests
+
 ```bash
-./benchmark
+ctest --test-dir build --output-on-failure
 ```
 
-### Generate Graphs
+### Compile and run benchmarks
+
 ```bash
-python plot_results.py
+cmake --build build --target cache_benchmark --config Release
+./build/cache_benchmark
 ```
 
-## Technical Details
+### Generate visualizations
 
-### Incremental Rehashing Algorithm
-Traditional hash tables rehash ALL data when resizing, causing latency spikes. This implementation:
-1. Allocates new table when load factor exceeds 0.5
-2. Transfers 25% of old table per insert/remove operation
-3. Maintains both tables during migration
-4. Ensures all operations complete in consistent time
+```bash
+python scripts/plot_results.py
+```
 
-### Performance Analysis
-- **Throughput**: Incremental approach achieves 2.1x better ops/sec
-- **P99 Latency**: Similar (14-15μs) due to fast hardware
-- **Max Latency**: 42% improvement - the real advantage
-- **Trade-off**: ~30% memory overhead during rehashing (temporary)
+## Implementation Notes
 
-## Author
-Ali Amir
+- Rehashing starts when the current table's load factor exceeds `0.5` or deleted-entry ratio exceeds `0.8`.
+- New insertions always target the current table.
+- Lookup and removal check both the current and old table while migration is active.
+- The old table is deleted once all live entries are migrated.
+- `getStats()` returns an immutable snapshot of table capacity, live entries, tombstones, and rehash progress for diagnostics and benchmarking.
+
+## Future Improvements
+
+- Add CMake build targets for tests, benchmarks, and visualizations.
+- Add GitHub Actions CI for compilation and test execution.
+- Replace raw pointer ownership with modern C++ containers or smart pointers.
+- Convert tests to Catch2 or GoogleTest.
+- Expand benchmarks with multiple trials, larger workloads, and sanitizer builds.
+- Add cache-oriented features such as LRU eviction, hit/miss counters, and configurable capacity.
+
+## Resume Framing
+
+Built a C++ hash-table cache with open addressing, lazy deletion, selectable probing policies, and incremental rehashing to reduce resize-related latency spikes. Created benchmark tooling and visualizations comparing incremental migration against a naive full-rehash baseline and `std::unordered_map`.
+

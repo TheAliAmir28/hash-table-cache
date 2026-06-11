@@ -35,13 +35,13 @@ def create_throughput_graph():
                 f'{int(ops):,}', 
                 ha='center', va='bottom', fontweight='bold', fontsize=12)
     
-    # Add improvement annotation
+    # Add comparison annotation
     inc_ops = df[df['Implementation'] == 'Incremental']['OpsPerSecond'].values[0]
     naive_ops = df[df['Implementation'] == 'Naive']['OpsPerSecond'].values[0]
-    improvement = (inc_ops / naive_ops)
+    improvement = (inc_ops / naive_ops) if naive_ops else 0
     
     ax.text(0.5, max(df['OpsPerSecond']) * 0.85, 
-            f'Incremental is {improvement:.1f}x faster!',
+            f'Incremental / naive: {improvement:.1f}x',
             transform=ax.transData,
             bbox=dict(boxstyle='round,pad=0.5', facecolor='yellow', alpha=0.7, edgecolor='black', linewidth=2),
             fontsize=13, fontweight='bold', ha='center')
@@ -57,7 +57,7 @@ def create_throughput_graph():
     
     plt.tight_layout()
     plt.savefig('results/throughput_comparison.png', dpi=300, bbox_inches='tight')
-    print("✓ Created: results/throughput_comparison.png")
+    print("Created: results/throughput_comparison.png")
     return fig
 
 def create_latency_graph():
@@ -101,7 +101,7 @@ def create_latency_graph():
     ax1.set_xticklabels(implementations, rotation=15, ha='right')
     ax1.grid(axis='y', alpha=0.3)
     
-    # Graph 2: Max Latency (The Real Story!)
+    # Graph 2: Max Latency
     max_values = df['Max'].tolist()
     bars2 = ax2.bar(x, max_values, width, color=colors, edgecolor='black', linewidth=1.5)
     
@@ -132,7 +132,7 @@ def create_latency_graph():
     
     plt.tight_layout()
     plt.savefig('results/latency_comparison.png', dpi=300, bbox_inches='tight')
-    print("✓ Created: results/latency_comparison.png")
+    print("Created: results/latency_comparison.png")
     return fig
 
 def create_spike_graph():
@@ -176,7 +176,7 @@ def create_spike_graph():
     
     plt.tight_layout()
     plt.savefig('results/spike_comparison.png', dpi=300, bbox_inches='tight')
-    print("✓ Created: results/spike_comparison.png")
+    print("Created: results/spike_comparison.png")
     return fig
 
 def create_summary_dashboard():
@@ -199,14 +199,14 @@ def create_summary_dashboard():
     
     inc_ops = throughput_df[throughput_df['Implementation'] == 'Incremental']['OpsPerSecond'].values[0]
     naive_ops = throughput_df[throughput_df['Implementation'] == 'Naive']['OpsPerSecond'].values[0]
-    improvement = (inc_ops / naive_ops)
+    improvement = (inc_ops / naive_ops) if naive_ops else 0
     ax1.text(0.5, max(throughput_df['OpsPerSecond']) * 0.7, 
-            f'{improvement:.1f}x FASTER',
+            f'Incremental / naive: {improvement:.1f}x',
             bbox=dict(boxstyle='round,pad=0.8', facecolor='yellow', alpha=0.8, edgecolor='black', linewidth=3),
-            fontsize=16, fontweight='bold', ha='center')
+            fontsize=13, fontweight='bold', ha='center')
     
     ax1.set_ylabel('Operations / Second', fontweight='bold', fontsize=12)
-    ax1.set_title('Throughput - THE KEY METRIC', fontweight='bold', fontsize=14)
+    ax1.set_title('Throughput Comparison', fontweight='bold', fontsize=14)
     ax1.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{int(x):,}'))
     ax1.grid(axis='y', alpha=0.3)
     
@@ -241,16 +241,15 @@ def create_summary_dashboard():
     
     summary_text = f"""
     BENCHMARK RESULTS SUMMARY
-    Test System: Intel i7-13700K (16 cores, 5.4GHz) + RTX 4070 Ti Super
+    Methodology: deterministic unique keys, median throughput trials, per-operation latency timing
     
     KEY FINDINGS:
     • Throughput: Incremental achieves {improvement:.1f}x better throughput ({int(inc_ops)} vs {int(naive_ops)} ops/sec)
     • Max Latency: {((max_values[1] - max_values[0]) / max_values[1] * 100):.0f}% lower worst-case latency
     • Consistency: No {max_values[1]/1000:.0f}ms pauses during rehashing
     
-    CONCLUSION: Even on flagship hardware, incremental rehashing provides significant throughput
-    improvement by eliminating long rehashing pauses. This advantage would be even more
-    pronounced on slower hardware or under high load conditions.
+    CONCLUSION: Incremental rehashing spreads resize work across operations, which is most
+    useful when predictable tail latency matters more than implementation simplicity.
     """
     
     ax4.text(0.5, 0.5, summary_text, 

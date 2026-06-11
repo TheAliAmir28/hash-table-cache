@@ -2,8 +2,7 @@
 #define CACHE_H
 #include <iostream>
 #include <string>
-#include "math.h"
-using namespace std;
+#include <cmath>
 class Tester;   // forward declaration, will be used for testing
 class CacheEntry;   // forward declaration
 class Cache;    // forward declaration
@@ -11,25 +10,41 @@ const int MINPRIME = 101;   // Min size for hash table
 const int MAXPRIME = 99991; // Max size for hash table
 const int MINID = 100000;
 const int MAXID = 999999;
-typedef unsigned int (*hash_fn)(string); // declaration of hash function
+typedef unsigned int (*hash_fn)(std::string); // declaration of hash function
 enum prob_t {QUADRATIC, DOUBLEHASH, LINEAR}; // types of collision handling policy
 #define DEFPOLCY QUADRATIC
+
+struct CacheStats {
+    int currentCapacity = 0;
+    int currentSize = 0;
+    int currentDeleted = 0;
+    int oldCapacity = 0;
+    int oldSize = 0;
+    int oldDeleted = 0;
+    int liveEntries = 0;
+    float loadFactor = 0.0F;
+    float deletedRatio = 0.0F;
+    bool rehashInProgress = false;
+    float rehashProgress = 1.0F;
+};
 
 class CacheEntry{
     public:
     friend class Tester;
     friend class Cache;
-    CacheEntry(string key="", int id=0, bool used=false){
+    CacheEntry(std::string key="", int id=0, bool used=false){
         m_key = key; m_id = id; m_used=used;
     }
-    string getKey() const {return m_key;}
+    CacheEntry(const CacheEntry& rhs) = default;
+    CacheEntry& operator=(const CacheEntry& rhs) = default;
+    std::string getKey() const {return m_key;}
     int getID() const {return m_id;}
-    void setKey(string key){m_key=key;}
+    void setKey(std::string key){m_key=key;}
     void setID(int id){m_id=id;}
     bool getUsed() const {return m_used;}
     void setUsed(bool used) {m_used=used;}
     // the following function is a friend function
-    friend ostream& operator<<(ostream& sout, const CacheEntry *entry ){
+    friend std::ostream& operator<<(std::ostream& sout, const CacheEntry *entry ){
         if ((entry != nullptr) && !(entry->getKey().empty()))
             sout << entry->getKey() << " (" << entry->getID() << ", "<< entry->getUsed() <<  ")";
         else
@@ -43,21 +58,13 @@ class CacheEntry{
         return ((lhs.getKey() == rhs.getKey()) && (lhs.getID() == rhs.getID()));
     }
     // the following function is a class function
-    bool operator==(const CacheEntry* & rhs){
+    bool operator==(const CacheEntry* rhs) const{
         // since the uniqueness of an object is defined by sequence and ID
         // the equality operator considers only those two criteria
         return ((getKey() == rhs->getKey()) && (getID() == rhs->getID()));
     }
-    const CacheEntry& operator=(const CacheEntry& rhs){
-        if (this != &rhs){
-            m_key = rhs.m_key;
-            m_id = rhs.m_id;
-            m_used = rhs.m_used;
-        }
-        return *this;
-    }
     private:
-    string m_key;   // the search string used as key in the hash table
+    std::string m_key;   // the search string used as key in the hash table
     int m_id;       // a unique ID number identifying the object
     // the following variable is used for lazy delete scheme in hash table
     // if it is set to false, it means the bucket in the hash table is free for insert
@@ -75,13 +82,14 @@ class Cache{
     // Returns the ratio of deleted slots in the new table
     float deletedRatio() const;
     // insert only happens in the new table
-    bool insert(CacheEntry entry);
+    bool insert(const CacheEntry& entry);
     // remove can happen from either table
-    bool remove(CacheEntry entry);
+    bool remove(const CacheEntry& entry);
     // find can happen in either table
-    const CacheEntry getCacheEntry(string key, int id) const;
+    CacheEntry getCacheEntry(std::string key, int id) const;
     // update the information
-    bool updateID(CacheEntry entry, int ID);
+    bool updateID(const CacheEntry& entry, int ID);
+    CacheStats getStats() const;
     void changeProbPolicy(prob_t policy);
     void dump() const;
     private:
@@ -112,10 +120,10 @@ class Cache{
     /******************************************
     * Private function declarations go here! *
     ******************************************/
-    int probeIndex(int hashedKey, int i, int capacity, prob_t policy) const;
-    int locateInsertionSlot(CacheEntry& entry, CacheEntry** table, int capacity, prob_t policy);
-    bool entryExists(CacheEntry& entry, CacheEntry** table, int capacity, prob_t policy);
-    int findEntryIndex(CacheEntry& entry, CacheEntry** table, int capacity, prob_t policy) const;
+    int probeIndex(unsigned int hashedKey, int i, int capacity, prob_t policy) const;
+    int locateInsertionSlot(const CacheEntry& entry, CacheEntry** table, int capacity, prob_t policy);
+    bool entryExists(const CacheEntry& entry, CacheEntry** table, int capacity, prob_t policy);
+    int findEntryIndex(const CacheEntry& entry, CacheEntry** table, int capacity, prob_t policy) const;
     void reinsertFromOld(CacheEntry* entry);
     void startNewRehash();
     void transferPartOfTable();
